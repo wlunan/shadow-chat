@@ -63,6 +63,7 @@
       <ChatInput 
         ref="chatInputRef"
         :roomId="currentRoom?.id"
+        :nickname="currentUser.nickname"
         @message-sent="loadAndRefresh" 
       />
     </footer>

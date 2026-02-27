@@ -64,6 +64,10 @@ const props = defineProps({
   roomId: {
     type: Number,
     default: null
+  },
+  nickname: {
+    type: String,
+    default: ''
   }
 })
 
@@ -115,7 +119,7 @@ async function sendText() {
   clearMessages()
 
   try {
-    const result = await sendTextMessage(textInput.value, user.id, user.nickname, props.roomId)
+    const result = await sendTextMessage(textInput.value, user.id, props.nickname || user.nickname, props.roomId)
 
     if (result.success) {
       textInput.value = ''
@@ -166,7 +170,7 @@ async function handleImageSelect(e) {
       uploadResult.url,
       uploadResult.fileSize,
       user.id,
-      user.nickname,
+      props.nickname || user.nickname,
       props.roomId
     )
 
