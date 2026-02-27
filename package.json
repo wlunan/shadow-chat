@@ -3,6 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "Anonymous chat room with message and image support",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "scripts": {
     "dev": "vite",

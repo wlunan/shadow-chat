@@ -17,14 +17,15 @@ function sanitizeText(text) {
 
 /**
  * 加载最近 150 条消息
+ * @param {number} roomId - 房间 ID（可选，不提供则使用默认房间）
  * @returns {Promise<Array>}
  */
-export async function loadRecentMessages() {
+export async function loadRecentMessages(roomId = DEFAULT_ROOM_ID) {
   try {
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .eq('room_id', DEFAULT_ROOM_ID)
+      .eq('room_id', roomId)
       .order('created_at', { ascending: false })
       .limit(150)
 
@@ -44,15 +45,16 @@ export async function loadRecentMessages() {
 /**
  * 加载更早的消息（懒加载）
  * @param {string} beforeTimestamp - 在此时间之前的消息
+ * @param {number} roomId - 房间 ID
  * @param {number} limit - 加载数量，默认 150
  * @returns {Promise<Array>}
  */
-export async function loadOlderMessages(beforeTimestamp, limit = 150) {
+export async function loadOlderMessages(beforeTimestamp, roomId = DEFAULT_ROOM_ID, limit = 150) {
   try {
     const { data, error } = await supabase
       .from('messages')
       .select('*')
-      .eq('room_id', DEFAULT_ROOM_ID)
+      .eq('room_id', roomId)
       .lt('created_at', beforeTimestamp)
       .order('created_at', { ascending: false })
       .limit(limit)
@@ -75,9 +77,10 @@ export async function loadOlderMessages(beforeTimestamp, limit = 150) {
  * @param {string} content - 消息内容
  * @param {string} userId - 用户 ID
  * @param {string} nickname - 用户昵称
+ * @param {number} roomId - 房间 ID
  * @returns {Promise<Object>} { success, error }
  */
-export async function sendTextMessage(content, userId, nickname) {
+export async function sendTextMessage(content, userId, nickname, roomId = DEFAULT_ROOM_ID) {
   // 验证内容
   if (!content || content.trim().length === 0) {
     return { success: false, error: '消息不能为空' }
@@ -91,7 +94,7 @@ export async function sendTextMessage(content, userId, nickname) {
     const sanitized = sanitizeText(content.trim())
 
     const { error } = await supabase.from('messages').insert({
-      room_id: DEFAULT_ROOM_ID,
+      room_id: roomId,
       user_id: userId,
       nickname: nickname,
       type: 'text',
@@ -116,12 +119,13 @@ export async function sendTextMessage(content, userId, nickname) {
  * @param {number} fileSize - 文件大小（字节）
  * @param {string} userId - 用户 ID
  * @param {string} nickname - 用户昵称
+ * @param {number} roomId - 房间 ID
  * @returns {Promise<Object>} { success, error }
  */
-export async function sendImageMessage(imageUrl, fileSize, userId, nickname) {
+export async function sendImageMessage(imageUrl, fileSize, userId, nickname, roomId = DEFAULT_ROOM_ID) {
   try {
     const { error } = await supabase.from('messages').insert({
-      room_id: DEFAULT_ROOM_ID,
+      room_id: roomId,
       user_id: userId,
       nickname: nickname,
       type: 'image',
@@ -143,30 +147,31 @@ export async function sendImageMessage(imageUrl, fileSize, userId, nickname) {
 
 /**
  * 订阅新消息
+ * @param {number} roomId - 房间 ID
  * @param {Function} callback - 接收到新消息时的回调函数
  * @returns {void}
  */
-export function subscribeMessages(callback) {
+export function subscribeMessages(roomId = DEFAULT_ROOM_ID, callback) {
   // 避免重复订阅
   if (subscription) {
     unsubscribeMessages()
   }
 
   try {
-    console.log('🔌 开始订阅新消息...', `room_id=${DEFAULT_ROOM_ID}`)
+    console.log('🔌 开始订阅新消息...', `room_id=${roomId}`)
     
     subscription = supabase
-      .channel(`messages:room:${DEFAULT_ROOM_ID}`)
+      .channel(`messages:room:${roomId}`)
       .on(
         'postgres_changes',
         {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `room_id=eq.${DEFAULT_ROOM_ID}`
+          filter: `room_id=eq.${roomId}`
         },
         (payload) => {
-          console.log('✅ 收到新消息:', payload.new)
+        //   console.log('✅ 收到新消息:', payload.new)
           // 调用回调函数，传入新消息
           callback(payload.new)
         }

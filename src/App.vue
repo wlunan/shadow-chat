@@ -11,6 +11,13 @@
       </div>
     </header>
 
+    <!-- 聊天室选择器 -->
+    <RoomSelector
+      :currentUserId="currentUser.id"
+      :currentRoom="currentRoom"
+      @room-selected="handleRoomSelected"
+    />
+
     <!-- 昵称编辑对话框 -->
     <div v-if="showNicknameDialog" class="nickname-dialog">
       <div class="dialog-overlay" @click="closeNicknameDialog"></div>
@@ -55,6 +62,7 @@
     <footer class="app-footer">
       <ChatInput 
         ref="chatInputRef"
+        :roomId="currentRoom?.id"
         @message-sent="loadAndRefresh" 
       />
     </footer>
@@ -65,9 +73,11 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import ChatWindow from './components/ChatWindow.vue'
 import ChatInput from './components/ChatInput.vue'
+import RoomSelector from './components/RoomSelector.vue'
 import { initUser, getCurrentUser } from './utils/user.js'
 import { updateNickname } from './utils/user_v2.js'
 import { loadRecentMessages, subscribeMessages, unsubscribeMessages } from './services/chatService.js'
+import { DEFAULT_ROOM_ID } from './services/supabase.js'
 
 // 初始化用户
 const currentUser = ref(initUser())
@@ -81,23 +91,23 @@ const newNickname = ref('')
 const nicknameError = ref('')
 const isUpdatingNickname = ref(false)
 
+// 聊天室相关
+const currentRoom = ref({
+  id: DEFAULT_ROOM_ID,
+  name: '大厅'
+})
+const currentRoomSub = ref(null)
+
 /**
  * 加载消息并刷新界面
  */
 async function loadAndRefresh() {
   try {
-    messages.value = await loadRecentMessages()
+    // 加载此聊天室的消息
+    messages.value = await loadRecentMessages(currentRoom.value.id)
   } catch (err) {
     console.error('加载消息失败:', err)
   }
-}
-
-/**
- * 处理加载更多历史消息
- */
-function handleLoadMore(olderMessages) {
-  // 将旧消息插入到数组开头
-  messages.value = [...olderMessages, ...messages.value]
 }
 
 /**
@@ -107,6 +117,34 @@ function handleMentionUser(nickname) {
   if (chatInputRef.value) {
     chatInputRef.value.insertMention(nickname)
   }
+}
+
+/**
+ * 下载历史消息
+ */
+function handleLoadMore(olderMessages) {
+  // 将斧消息插入到数组开头
+  messages.value = [...olderMessages, ...messages.value]
+}
+
+/**
+ * 处理聊天室选择
+ */
+async function handleRoomSelected(room) {
+  currentRoom.value = room
+  messages.value = []
+  await loadAndRefresh()
+  
+  // 取消旧的订阅，并订阅新聊天室
+  if (currentRoomSub.value) {
+    unsubscribeMessages()
+  }
+  
+  // 订阅新聊天室的消息
+  subscribeMessages(currentRoom.value.id, (newMessage) => {
+    console.log('📩 App 收到新消息:', newMessage)
+    messages.value.push(newMessage)
+  })
 }
 
 /**
@@ -152,18 +190,18 @@ async function updateUserNickname() {
 
 /**
  * 生命周期：挂载
- * - 加载历史消息
+ * - 自动加载默认聊天室（大厅）的消息
  * - 订阅新消息
  */
 onMounted(async () => {
   isLoading.value = true
 
   try {
-    // 加载最近 150 条消息
+    // 自动加载默认聊天室的消息
     await loadAndRefresh()
 
-    // 订阅新消息
-    subscribeMessages((newMessage) => {
+    // 订阅默认聊天室的新消息
+    subscribeMessages(currentRoom.value.id, (newMessage) => {
       console.log('📩 App 收到新消息:', newMessage)
       messages.value.push(newMessage)
     })

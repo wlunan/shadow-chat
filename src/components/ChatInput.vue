@@ -60,6 +60,13 @@ import { getCurrentUser } from '../utils/user.js'
 
 const emit = defineEmits(['message-sent'])
 
+const props = defineProps({
+  roomId: {
+    type: Number,
+    default: null
+  }
+})
+
 const textInput = ref('')
 const isSending = ref(false)
 const imageUploading = ref(false)
@@ -99,12 +106,16 @@ function handleEnter(e) {
 async function sendText() {
   if (isSending.value || imageUploading.value) return
   if (!textInput.value.trim()) return
+  if (!props.roomId) {
+    errorMessage.value = '请先选择聊天室'
+    return
+  }
 
   isSending.value = true
   clearMessages()
 
   try {
-    const result = await sendTextMessage(textInput.value, user.id, user.nickname)
+    const result = await sendTextMessage(textInput.value, user.id, user.nickname, props.roomId)
 
     if (result.success) {
       textInput.value = ''
@@ -130,6 +141,11 @@ async function sendText() {
 async function handleImageSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
+  
+  if (!props.roomId) {
+    errorMessage.value = '请先选择聊天室'
+    return
+  }
 
   // 防止重复上传
   imageUploading.value = true
@@ -150,7 +166,8 @@ async function handleImageSelect(e) {
       uploadResult.url,
       uploadResult.fileSize,
       user.id,
-      user.nickname
+      user.nickname,
+      props.roomId
     )
 
     if (sendResult.success) {

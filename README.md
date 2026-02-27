@@ -155,4 +155,4 @@ DROP POLICY IF EXISTS "Allow all to insert messages" ON public.messages;
 
 ## 许可证
 
-MIT
+GNU Affero General Public License v3.0 (AGPL-3.0)
