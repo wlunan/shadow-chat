@@ -20,6 +20,7 @@
         />
       </div>
     </div>
+
   </div>
 </template>
 
@@ -46,6 +47,7 @@ const isLoadingMore = ref(false)
 const hasMore = ref(true)
 const lastScrollHeight = ref(0)
 const isUserScrolling = ref(false)
+
 
 // 监听消息列表变化，自动滚动到底部（仅在不是加载更多时）
 watch(

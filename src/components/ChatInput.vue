@@ -17,24 +17,24 @@
         v-model="textInput"
         @keydown.enter.ctrl="sendText"
         @keydown.enter.exact="handleEnter"
-        placeholder="输入消息... (Ctrl+Enter 或 Enter 发送)"
+        placeholder="输入消息... "
         class="text-input"
         :disabled="isSending"
       ></textarea>
 
       <!-- 按钮区域 -->
       <div class="button-group">
-        <!-- 图片上传按钮 -->
+        <!-- 媒体上传按钮 -->
         <label class="upload-btn" :class="{ disabled: isSending }">
           <input
-            ref="imageInput"
+            ref="mediaInput"
             type="file"
-            accept="image/png,image/jpeg,image/webp"
-            @change="handleImageSelect"
+            accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime"
+            @change="handleMediaSelect"
             :disabled="isSending"
             hidden
           />
-          {{ imageUploading ? '上传中...' : '📷 上传图片' }}
+          {{ imageUploading ? '上传中...' : '📷 上传媒体' }}
         </label>
 
         <!-- 发送文本消息按钮 -->
@@ -47,7 +47,7 @@
     <!-- 输入框提示信息 -->
     <div class="input-hint">
       <span v-if="textInput.length > 0">{{ textInput.length }}/300</span>
-      <span v-else>支持文本（最多 300 字）和图片（最大 1MB）</span>
+      <span v-else>支持文本（最多 300 字）、图片（<3MB）、视频（<10MB）</span>
     </div>
   </div>
 </template>
@@ -55,7 +55,7 @@
 <script setup>
 import { ref } from 'vue'
 import { sendTextMessage, sendImageMessage } from '../services/chatService.js'
-import { uploadImage } from '../services/storageService.js'
+import { uploadImage, uploadVideo } from '../services/storageService.js'
 import { getCurrentUser } from '../utils/user.js'
 
 const emit = defineEmits(['message-sent'])
@@ -76,7 +76,7 @@ const isSending = ref(false)
 const imageUploading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
-const imageInput = ref(null)
+const mediaInput = ref(null)
 
 const user = getCurrentUser()
 
@@ -142,7 +142,7 @@ async function sendText() {
 /**
  * 处理图片选择
  */
-async function handleImageSelect(e) {
+async function handleMediaSelect(e) {
   const file = e.target.files?.[0]
   if (!file) return
   
@@ -157,25 +157,44 @@ async function handleImageSelect(e) {
   clearMessages()
 
   try {
-    // 上传图片
-    const uploadResult = await uploadImage(file, user.id)
+    // 判断文件类型
+    const isImage = file.type.startsWith('image/')
+    const isVideo = file.type.startsWith('video/')
+
+    if (!isImage && !isVideo) {
+      errorMessage.value = '只支持图片和视频文件'
+      return
+    }
+
+    let uploadResult
+    if (isImage) {
+      // 上传图片（自动压缩）
+      uploadResult = await uploadImage(file, user.id)
+    } else {
+      // 上传视频
+      uploadResult = await uploadVideo(file, user.id)
+    }
 
     if (uploadResult.error) {
       errorMessage.value = uploadResult.error
       return
     }
 
-    // 发送图片消息
+    const mediaType = uploadResult.mediaType || (isVideo ? 'video' : 'image')
+
+    // 发送媒体消息
     const sendResult = await sendImageMessage(
       uploadResult.url,
       uploadResult.fileSize,
       user.id,
       props.nickname || user.nickname,
-      props.roomId
+      props.roomId,
+      mediaType
     )
 
     if (sendResult.success) {
-      successMessage.value = '图片已发送'
+      const label = isImage ? '图片' : '视频'
+      successMessage.value = `${label}已发送`
       setTimeout(() => {
         successMessage.value = ''
       }, 2000)
@@ -184,14 +203,14 @@ async function handleImageSelect(e) {
       errorMessage.value = sendResult.error || '发送失败'
     }
   } catch (err) {
-    console.error('上传图片异常:', err)
+    console.error('上传媒体异常:', err)
     errorMessage.value = '上传异常'
   } finally {
     imageUploading.value = false
     isSending.value = false
     // 重置文件输入
-    if (imageInput.value) {
-      imageInput.value.value = ''
+    if (mediaInput.value) {
+      mediaInput.value.value = ''
     }
   }
 }
@@ -207,7 +226,7 @@ function clearMessages() {
 
 <style scoped>
 .chat-input {
-  padding: 15px;
+  padding: 10px 12px;
   border-top: 1px solid #e0e0e0;
   background: #f9f9f9;
 }
@@ -234,20 +253,24 @@ function clearMessages() {
 
 .input-wrapper {
   display: flex;
-  gap: 10px;
-  margin-bottom: 8px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
 }
 
 .text-input {
   flex: 1;
-  padding: 10px 12px;
+  padding: 8px 10px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 6px;
   font-family: inherit;
   font-size: 13px;
   resize: none;
-  height: 80px;
-  transition: border-color 0.2s;
+  height: 36px;
+  min-height: 36px;
+  max-height: 120px;
+  line-height: 1.35;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .text-input:focus {
@@ -263,17 +286,18 @@ function clearMessages() {
 
 .button-group {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  align-items: center;
 }
 
 .upload-btn,
 .send-btn {
-  padding: 10px 16px;
+  padding: 8px 12px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 6px;
   background: #fff;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   transition: all 0.2s;
   white-space: nowrap;
@@ -296,7 +320,7 @@ function clearMessages() {
   background: #1890ff;
   color: #fff;
   border-color: #1890ff;
-  min-width: 80px;
+  min-width: 72px;
 }
 
 .send-btn:hover:not(:disabled) {
@@ -305,7 +329,7 @@ function clearMessages() {
 }
 
 .input-hint {
-  font-size: 12px;
+  font-size: 11px;
   color: #999;
   text-align: right;
 }

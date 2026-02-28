@@ -114,22 +114,23 @@ export async function sendTextMessage(content, userId, nickname, roomId = DEFAUL
 }
 
 /**
- * 发送图片消息
- * @param {string} imageUrl - 图片 URL
+ * 发送媒体消息（图片/视频）
+ * @param {string} mediaUrl - 媒体 URL
  * @param {number} fileSize - 文件大小（字节）
  * @param {string} userId - 用户 ID
  * @param {string} nickname - 用户昵称
  * @param {number} roomId - 房间 ID
+ * @param {('image'|'video')} mediaType - 媒体类型
  * @returns {Promise<Object>} { success, error }
  */
-export async function sendImageMessage(imageUrl, fileSize, userId, nickname, roomId = DEFAULT_ROOM_ID) {
+export async function sendImageMessage(mediaUrl, fileSize, userId, nickname, roomId = DEFAULT_ROOM_ID, mediaType = 'image') {
   try {
     const { error } = await supabase.from('messages').insert({
       room_id: roomId,
       user_id: userId,
       nickname: nickname,
-      type: 'image',
-      content: imageUrl,
+      type: mediaType,
+      content: mediaUrl,
       file_size: fileSize
     })
 

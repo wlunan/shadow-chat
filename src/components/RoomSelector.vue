@@ -379,37 +379,41 @@ onMounted(() => {
 <style scoped>
 .room-selector {
   position: relative;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  background: transparent;
+  padding: 4px 0;
 }
 
 .current-room {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
+  padding: 8px 12px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
 }
 
 .room-name {
-  font-weight: 500;
+  font-weight: 600;
   font-size: 14px;
+  letter-spacing: 0.2px;
 }
 
 .btn-menu {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   color: white;
-  font-size: 20px;
+  font-size: 16px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: all 0.2s;
+  padding: 6px 9px;
+  border-radius: 7px;
+  transition: all 0.2s ease;
 }
 
 .btn-menu:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-1px);
 }
 
 /* 房间管理面板 */
@@ -417,14 +421,19 @@ onMounted(() => {
   position: absolute;
   top: 100%;
   left: 0;
-  right: 0;
   background: white;
   border-bottom: 1px solid #e0e0e0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
   z-index: 999;
   max-height: 500px;
   display: flex;
   flex-direction: column;
+  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  min-width: 360px;
+  width: 380px;
+  max-width: 92vw;
 }
 
 .panel-tabs {
@@ -435,11 +444,11 @@ onMounted(() => {
 
 .tab-btn {
   flex: 1;
-  padding: 12px;
+  padding: 14px;
   border: none;
   background: none;
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   color: #666;
   border-bottom: 3px solid transparent;
   transition: all 0.2s;
@@ -461,22 +470,22 @@ onMounted(() => {
 }
 
 .tab-pane {
-  padding: 8px;
+  padding: 12px 14px 14px;
 }
 
 .room-list {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
 }
 
 .room-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
+  padding: 12px 16px;
   border: 1px solid #eee;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s;
   background: white;
@@ -493,48 +502,55 @@ onMounted(() => {
 }
 
 .room-item.public {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
 }
 
 .room-info {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   flex: 1;
   width: 100%;
+  min-width: 0;
 }
 
 .room-item.public .room-info {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
 }
 
 .room-title {
-  font-weight: 500;
-  font-size: 13px;
+  font-weight: 600;
+  font-size: 14px;
   color: #333;
+  white-space: nowrap;
 }
 
 .room-desc {
-  font-size: 11px;
-  color: #999;
+  font-size: 12px;
+  color: #888;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .room-count {
-  font-size: 11px;
-  color: #999;
-  padding: 2px 6px;
-  background: #f0f0f0;
-  border-radius: 3px;
+  font-size: 12px;
+  color: #777;
+  padding: 3px 8px;
+  background: #f3f4f6;
+  border-radius: 6px;
   white-space: nowrap;
 }
 
 .room-actions {
   display: flex;
-  gap: 6px;
+  gap: 10px;
 }
 
 .btn-delete,
@@ -542,12 +558,12 @@ onMounted(() => {
 .btn-create,
 .btn-join,
 .btn-joined {
-  padding: 4px 8px;
+  padding: 8px 14px;
   border: 1px solid #ddd;
-  border-radius: 4px;
+  border-radius: 6px;
   background: white;
   cursor: pointer;
-  font-size: 11px;
+  font-size: 13px;
   transition: all 0.2s;
 }
 
@@ -566,7 +582,6 @@ onMounted(() => {
   background: #4ade80;
   color: white;
   border-color: #4ade80;
-  width: 100%;
 }
 
 .btn-create:hover:not(:disabled) {
@@ -597,18 +612,19 @@ onMounted(() => {
 
 .create-room-form {
   display: flex;
-  gap: 6px;
-  padding: 8px;
+  gap: 10px;
+  padding: 12px 14px;
   border-top: 1px solid #eee;
   background: #fafafa;
+  align-items: center;
 }
 
 .room-input {
   flex: 1;
-  padding: 8px;
+  padding: 9px 12px;
   border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 12px;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
 .room-input:focus {
@@ -617,19 +633,19 @@ onMounted(() => {
 }
 
 .empty-state {
-  padding: 20px;
+  padding: 24px;
   text-align: center;
-  color: #999;
-  font-size: 12px;
+  color: #777;
+  font-size: 13px;
 }
 
 .error-message {
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: #fee2e2;
   color: #ef4444;
-  font-size: 11px;
-  border-radius: 4px;
-  margin: 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  margin: 10px 12px;
 }
 
 /* 确认对话框 */

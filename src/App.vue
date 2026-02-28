@@ -11,12 +11,15 @@
       </div>
     </header>
 
-    <!-- 聊天室选择器 -->
-    <RoomSelector
-      :currentUserId="currentUser.id"
-      :currentRoom="currentRoom"
-      @room-selected="handleRoomSelected"
-    />
+    <!-- 聊天室选择器 + 媒体库按钮 -->
+    <div class="room-bar">
+      <RoomSelector
+        :currentUserId="currentUser.id"
+        :currentRoom="currentRoom"
+        @room-selected="handleRoomSelected"
+      />
+      <button class="btn-media" @click="openMediaViewer">🖼️ 媒体库</button>
+    </div>
 
     <!-- 昵称编辑对话框 -->
     <div v-if="showNicknameDialog" class="nickname-dialog">
@@ -67,6 +70,12 @@
         @message-sent="loadAndRefresh" 
       />
     </footer>
+
+    <!-- 媒体查看器 -->
+    <MediaViewer
+      ref="mediaViewerRef"
+      :messages="messages"
+    />
   </div>
 </template>
 
@@ -75,6 +84,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import ChatWindow from './components/ChatWindow.vue'
 import ChatInput from './components/ChatInput.vue'
 import RoomSelector from './components/RoomSelector.vue'
+import MediaViewer from './components/MediaViewer.vue'
 import { initUser, getCurrentUser } from './utils/user.js'
 import { updateNickname } from './utils/user_v2.js'
 import { loadRecentMessages, subscribeMessages, unsubscribeMessages } from './services/chatService.js'
@@ -85,6 +95,7 @@ const currentUser = ref(initUser())
 const messages = ref([])
 const isLoading = ref(false)
 const chatInputRef = ref(null)
+const mediaViewerRef = ref(null)
 
 // 昵称编辑相关
 const showNicknameDialog = ref(false)
@@ -98,6 +109,10 @@ const currentRoom = ref({
   name: '大厅'
 })
 const currentRoomSub = ref(null)
+
+function openMediaViewer() {
+  if (mediaViewerRef.value) mediaViewerRef.value.openModal()
+}
 
 /**
  * 加载消息并刷新界面
@@ -239,6 +254,30 @@ onUnmounted(() => {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.room-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px 0 16px;
+}
+
+.btn-media {
+  padding: 7px 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, opacity 0.2s;
+}
+
+.btn-media:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
 }
 
 .app-header h1 {

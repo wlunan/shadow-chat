@@ -15,7 +15,7 @@
         <div v-if="message.type === 'text'" class="text-message" v-html="renderMessage(message.content)"></div>
 
         <!-- 图片消息 -->
-        <div v-else-if="message.type === 'image'" class="image-message">
+        <div v-else-if="mediaType === 'image'" class="image-message">
           <img
             :src="message.content"
             :alt="message.nickname"
@@ -23,6 +23,17 @@
             class="image-thumbnail"
             loading="lazy"
           />
+        </div>
+
+        <!-- 视频消息 -->
+        <div v-else-if="mediaType === 'video'" class="video-message" @click.stop>
+          <video
+            :src="message.content"
+            controls
+            playsinline
+            preload="metadata"
+            class="video-player"
+          ></video>
         </div>
       </div>
     </div>
@@ -38,7 +49,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { formatTime } from '../utils/time.js'
 
 const props = defineProps({
@@ -55,6 +66,22 @@ const props = defineProps({
 const emit = defineEmits(['mention-user'])
 
 const showImagePreview = ref(false)
+
+/**
+ * 判定是否为视频（兼容旧数据 type=image 但 URL 是视频）
+ */
+function isVideoUrl(url) {
+  if (!url) return false
+  const lower = url.toLowerCase().split('?')[0]
+  return ['.mp4', '.webm', '.mov', '.mkv', '.m4v'].some(ext => lower.endsWith(ext))
+}
+
+const mediaType = computed(() => {
+  if (props.message.type === 'video') return 'video'
+  if (props.message.type === 'image' && isVideoUrl(props.message.content)) return 'video'
+  if (props.message.type === 'image') return 'image'
+  return props.message.type
+})
 
 /**
  * 打开图片预览
@@ -179,6 +206,19 @@ function renderMessage(content) {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.video-message {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-player {
+  max-width: 260px;
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 /* 图片缩略图：固定大小，模糊处理 */
